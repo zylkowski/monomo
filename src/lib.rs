@@ -1,17 +1,15 @@
 extern crate monomo_macros;
 pub use monomo_macros::*;
 
-// #[cfg(test)]
+#[cfg(test)]
 mod tests {
-    use crate::rphize;
+    use crate::*;
 
     trait Foo<T> {}
-    struct B<T> {
-        a: T,
-    }
-    rphize!(Foo<B<i32>>);
+    struct B;
 
-    // struct _Bar {
-    //     baz: Box<crate::rph!(Foo<i32>)>,
-    // }
+    rphize!(Foo<i32>);
+
+    #[rphize_impl]
+    impl Foo<i32> for B {}
 }
