@@ -1,10 +1,8 @@
-use std::fmt::Debug;
-
 use proc_macro::TokenStream;
 use quote::*;
 use syn::{
-    parse::Parse, parse_macro_input, AngleBracketedGenericArguments, Attribute, GenericArgument,
-    Ident, ImplItem, ItemImpl, ItemTrait, Path, PathArguments, Type, TypePath,
+    parse::Parse, parse_macro_input, Attribute, GenericArgument, Ident, ItemImpl, Path,
+    PathArguments, Type, TypePath,
 };
 
 struct MonomoInput {
@@ -21,25 +19,11 @@ impl Parse for MonomoInput {
     }
 }
 
-fn flatten_path(path: &Path) -> Ident {
-    let ty = path.segments.last().expect("Incorrect identifier!");
-    let mut flattened_ident = ty.ident.clone();
-    if let PathArguments::AngleBracketed(gen_args) = ty.arguments.clone() {
-        gen_args.args.iter().for_each(|gen_arg| match gen_arg {
-            GenericArgument::Type(Type::Path(t)) => {
-                flattened_ident = format_ident!("{}_{}", flattened_ident, flatten_path(&t.path));
-            }
-            _ => panic!("Lifetimes cannot be monomorphized!"),
-        })
-    }
-    flattened_ident
-}
-
 #[proc_macro]
 pub fn rphize(tokens: TokenStream) -> TokenStream {
     let parse_input = parse_macro_input!(tokens as MonomoInput);
 
-    let monomorphized = format_ident!("__{}", flatten_path(&parse_input.path));
+    let monomorphized = monomorphize_path(&parse_input.path);
     let attrs = parse_input.attrs;
     let full_path = parse_input.path;
 
@@ -54,7 +38,7 @@ pub fn rphize(tokens: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn rph(tokens: TokenStream) -> TokenStream {
     let parse_input = parse_macro_input!(tokens as MonomoInput);
-    let monomorphized = format_ident!("__{}", flatten_path(&parse_input.path));
+    let monomorphized = format_ident!("__{}", flatten_type_path(&parse_input.path));
 
     quote! {
         dyn #monomorphized
@@ -65,17 +49,14 @@ pub fn rph(tokens: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn rphize_impl(_input: TokenStream, tokens: TokenStream) -> TokenStream {
     let mut parse_input = parse_macro_input!(tokens as ItemImpl);
-    let ty = *parse_input.self_ty.clone();
+    let ty = &parse_input.self_ty;
 
-    let monomorphized = format_ident!(
-        "__{}",
-        flatten_path(
-            &parse_input
-                .trait_
-                .as_ref()
-                .expect("Can't monomorphise this trait")
-                .1
-        )
+    let monomorphized = monomorphize_path(
+        &parse_input
+            .trait_
+            .as_ref()
+            .expect("No trait to monomorphize!")
+            .1,
     );
 
     let attrs = parse_input.attrs.clone();
@@ -89,5 +70,22 @@ pub fn rphize_impl(_input: TokenStream, tokens: TokenStream) -> TokenStream {
     .into()
 }
 
-// monomo::rphize
-// monomo::rph
+fn monomorphize_path(path: &Path) -> Ident {
+    format_ident!("__{}", flatten_type_path(path))
+}
+
+fn flatten_type_path(path: &Path) -> Ident {
+    let ty = path.segments.last().expect("Incorrect identifier!");
+    let mut flattened_ident = ty.ident.clone();
+
+    if let PathArguments::AngleBracketed(gen_args) = &ty.arguments {
+        gen_args.args.iter().for_each(|gen_arg| match gen_arg {
+            GenericArgument::Type(Type::Path(t)) => {
+                flattened_ident =
+                    format_ident!("{}_{}", flattened_ident, flatten_type_path(&t.path));
+            }
+            _ => panic!("Lifetimes cannot be monomorphized!"),
+        })
+    }
+    flattened_ident
+}
