@@ -8,7 +8,8 @@ as we cannot use generic trait.
 ```rust
 trait Foo<T> {}
 
-// Notice that you don't have to use typetag attribute, and the trait will still be monomorphized. 
+// Notice that you don't have to use typetag attribute, 
+// and the trait will still be monomorphized. 
 // typetag is just good example when you would like to use monomo.
 monomo::rphize!(
     #[typetag::serde]
@@ -19,7 +20,8 @@ Above macro expands to monomorphized version of `Foo<i32>`.
 
 In order to implement monomorphized trait for a struct we can do the following:
 ```rust
-// Notice that you don't have to use typetag attribute, and the trait will still be monomorphized. 
+// Notice that you don't have to use typetag attribute, 
+// and the trait will still be monomorphized. 
 // typetag is just good example when you would like to use monomo.
 #[monomo::rphize_impl]
 #[typetage::serde]
