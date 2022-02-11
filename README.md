@@ -1,5 +1,5 @@
 # monomo
-Easy trait monomoprhization crate. Especially usefull with [typetag](https://crates.io/crates/typetag) crate.
+Easy trait monomoprhization crate. Especially useful with [typetag](https://crates.io/crates/typetag) crate.
 
 
 ## Example
