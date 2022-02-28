@@ -10,4 +10,4 @@ license = "MIT"
 repository = "https://github.com/zylkowski/monomo"
 
 [dependencies]
-monomo_macros = "0.1.0"
+monomo_macros = "0.1.1"
